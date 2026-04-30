@@ -76,6 +76,9 @@ class MazeGUI:
         # Status Label
         self.status_label = tk.Label(self.root, text="Ready. Select an algorithm and run.", bg="#2b2b2b", fg="#4fc3f7", font=("Arial", 14))
         self.status_label.pack(pady=5)
+        
+        self.cost_label = tk.Label(self.root, text="Current Cost: 0", bg="#2b2b2b", fg="#ffeb3b", font=("Arial", 14, "bold"))
+        self.cost_label.pack(pady=2)
 
     def draw_maze(self):
         self.canvas.delete("all")
@@ -102,6 +105,7 @@ class MazeGUI:
     def reset_maze(self):
         if self.is_running: return
         self.status_label.config(text="Maze reset. Ready.", fg="#4fc3f7")
+        self.cost_label.config(text="Current Cost: 0")
         self.draw_maze()
 
     def clear_walls(self):
@@ -143,27 +147,64 @@ class MazeGUI:
         
         func = algorithms[algo_name]
         try:
-            # We now expect algorithms to return (path, visited_order)
             result = func(self.maze_data)
-            if isinstance(result, tuple) and len(result) == 2:
+            if isinstance(result, tuple) and len(result) == 3:
+                path, visited_order, costs_info = result
+            elif isinstance(result, tuple) and len(result) == 2:
                 path, visited_order = result
+                costs_info = {}
             else:
                 path = result
-                visited_order = [] # Fallback if algorithm not modified
+                visited_order = []
+                costs_info = {}
         except Exception as e:
             self.status_label.config(text=f"Error: {e}", fg="#f44336")
             self.is_running = False
             return
 
-        self.animate(path, visited_order, algo_name)
+        self.animate(path, visited_order, costs_info, algo_name)
 
-    def animate(self, path, visited_order, algo_name):
+    def animate(self, path, visited_order, costs_info, algo_name):
+        self.cost_label.config(text=f"Exploring nodes with {algo_name}...")
+        
+        # Color mapping for different algorithms to make it look nice
+        algo_colors = {
+            "BFS": "#81d4fa",     # Light Blue
+            "DFS": "#ffcc80",     # Orange
+            "UCS": "#b39ddb",     # Purple
+            "Greedy": "#ef9a9a",  # Pinkish red
+            "A*": "#b2dfdb"       # Purple/Green
+        }
+        explore_color = algo_colors.get(algo_name, "#81d4fa")
+
         # Animate Exploration
         def show_visited(index):
             if index < len(visited_order):
                 r, c = visited_order[index]
                 if self.maze_data[r][c] not in ['S', 'G']:
-                    self.canvas.itemconfig(self.rectangles[(r, c)], fill="#81d4fa") # Light Blue
+                    self.canvas.itemconfig(self.rectangles[(r, c)], fill=explore_color)
+                    
+                    if (r, c) in costs_info:
+                        info = costs_info[(r, c)]
+                        x1, y1 = c * self.cell_size, r * self.cell_size
+                        
+                        if algo_name == "A*":
+                            text = f"f:{info['f']}\ng:{info['g']} h:{info['h']}"
+                            self.canvas.create_text(x1 + self.cell_size/2, y1 + self.cell_size/2, text=text, font=("Arial", 8, "bold"), fill="#333")
+                            self.cost_label.config(text=f"Visiting ({r},{c}) | f(n)={info['f']}, g(n)={info['g']}, h(n)={info['h']}")
+                        elif algo_name in ["DFS", "BFS"]:
+                            text = f"Depth:\n{info['g']}"
+                            self.canvas.create_text(x1 + self.cell_size/2, y1 + self.cell_size/2, text=text, font=("Arial", 10, "bold"), fill="#333")
+                            self.cost_label.config(text=f"Visiting ({r},{c}) | Depth = {info['g']}")
+                        elif algo_name == "UCS":
+                            text = f"g:{info['g']}"
+                            self.canvas.create_text(x1 + self.cell_size/2, y1 + self.cell_size/2, text=text, font=("Arial", 10, "bold"), fill="#333")
+                            self.cost_label.config(text=f"Visiting ({r},{c}) | Path Cost g(n)={info['g']}")
+                        elif algo_name == "Greedy":
+                            text = f"h:{info['h']}"
+                            self.canvas.create_text(x1 + self.cell_size/2, y1 + self.cell_size/2, text=text, font=("Arial", 10, "bold"), fill="#333")
+                            self.cost_label.config(text=f"Visiting ({r},{c}) | Heuristic h(n)={info['h']}")
+
                 self.root.after(int(self.animation_speed * 1000), show_visited, index + 1)
             else:
                 # After visiting, show path
@@ -172,14 +213,19 @@ class MazeGUI:
                     show_path(0)
                 else:
                     self.status_label.config(text=f"{algo_name}: No path exists!", fg="#f44336")
+                    self.cost_label.config(text="Current Cost: N/A")
                     self.is_running = False
 
         # Animate Final Path
         def show_path(index):
             if index < len(path):
                 r, c = path[index]
+                self.cost_label.config(text=f"Final Path Step: {index}")
                 if self.maze_data[r][c] not in ['S', 'G']:
                     self.canvas.itemconfig(self.rectangles[(r, c)], fill="#ffeb3b") # Yellow
+                    x1, y1 = c * self.cell_size, r * self.cell_size
+                    self.canvas.create_text(x1 + self.cell_size/2, y1 + self.cell_size/2, text=str(index), font=("Arial", 12, "bold"), fill="black")
+
                 self.root.after(int(self.animation_speed * 1000), show_path, index + 1)
             else:
                 self.is_running = False
