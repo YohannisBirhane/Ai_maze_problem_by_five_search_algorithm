@@ -36,3 +36,13 @@ def greedy(maze):
                 heapq.heappush(pq, (heuristic(neighbor, goal), neighbor))
 
     return None, visited_order, costs_info
+
+if __name__ == "__main__":
+    test_maze = [
+        ["S", ".", ".", "#"],
+        ["#", ".", "#", "."],
+        [".", ".", ".", "G"],
+    ]
+    path, visited, costs = greedy(test_maze)
+    print("Greedy Path:", path)
+    print("Nodes Visited:", len(visited))

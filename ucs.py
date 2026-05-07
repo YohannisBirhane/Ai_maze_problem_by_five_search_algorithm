@@ -36,3 +36,13 @@ def ucs(maze):
                 parent[neighbor] = current
 
     return None, visited_order, costs_info
+
+if __name__ == "__main__":
+    test_maze = [
+        ["S", ".", ".", "#"],
+        ["#", ".", "#", "."],
+        [".", ".", ".", "G"],
+    ]
+    path, visited, costs = ucs(test_maze)
+    print("UCS Path:", path)
+    print("Nodes Visited:", len(visited))

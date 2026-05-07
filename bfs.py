@@ -27,3 +27,13 @@ def bfs(maze):
                 queue.append((neighbor, depth + 1))
 
     return None, visited_order, costs_info
+
+if __name__ == "__main__":
+    test_maze = [
+        ["S", ".", ".", "#"],
+        ["#", ".", "#", "."],
+        [".", ".", ".", "G"],
+    ]
+    path, visited, costs = bfs(test_maze)
+    print("BFS Path:", path)
+    print("Nodes Visited:", len(visited))

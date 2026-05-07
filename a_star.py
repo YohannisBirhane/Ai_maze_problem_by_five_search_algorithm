@@ -44,3 +44,13 @@ def astar(maze):
                 parent[neighbor] = current
 
     return None, visited_order, costs_info
+
+if __name__ == "__main__":
+    test_maze = [
+        ["S", ".", ".", "#"],
+        ["#", ".", "#", "."],
+        [".", ".", ".", "G"],
+    ]
+    path, visited, costs = astar(test_maze)
+    print("A* Path:", path)
+    print("Nodes Visited:", len(visited))
